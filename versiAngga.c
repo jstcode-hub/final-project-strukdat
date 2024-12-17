@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,7 +9,6 @@ typedef struct Kamar
     int nomorKamar;
     char jenisKamar[20];
     int tersedia; // 1 untuk tersedia, 0 untuk tidak tersedia
-    float harga;  // Harga kamar
     struct Kamar *next;
 } Kamar;
 
@@ -29,14 +29,22 @@ typedef struct Queue
     Orang *rear;
 } Queue;
 
+// Struktur untuk History Pemesanan
+typedef struct History
+{
+    char nama[50];
+    int nomorKamar;
+    struct History *next;
+} History;
+
+
 // Fungsi untuk menambah data kamar ke dalam linked list kamar
-void tambahKamar(Kamar **head, int nomorKamar, const char *jenisKamar, int tersedia, float harga)
+void tambahKamar(Kamar **head, int nomorKamar, const char *jenisKamar, int tersedia)
 {
     Kamar *baru = (Kamar *)malloc(sizeof(Kamar));
     baru->nomorKamar = nomorKamar;
     strcpy(baru->jenisKamar, jenisKamar);
     baru->tersedia = tersedia;
-    baru->harga = harga;
     baru->next = *head;
     *head = baru;
 }
@@ -45,13 +53,12 @@ void tambahKamar(Kamar **head, int nomorKamar, const char *jenisKamar, int terse
 void tampilkanKamar(Kamar *head)
 {
     Kamar *temp = head;
-    printf("\n%-15s%-20s%-15s%-10s\n", "Nomor Kamar", "Jenis Kamar", "Status", "Harga");
-    printf("---------------------------------------------------------\n");
+    printf("\n%-15s%-20s%-15s\n", "Nomor Kamar", "Jenis Kamar", "Status");
+    printf("----------------------------------------------\n");
 
     while (temp != NULL)
     {
-        printf("%-15d%-20s%-15sRp. %.2f\n", temp->nomorKamar, temp->jenisKamar,
-               (temp->tersedia ? "Tersedia" : "Tidak Tersedia"), temp->harga);
+        printf("%-15d%-20s%-15s\n", temp->nomorKamar, temp->jenisKamar, (temp->tersedia ? "Tersedia" : "Tidak Tersedia"));
         temp = temp->next;
     }
 }
@@ -77,6 +84,7 @@ void tambahReservasi(Orang **head, Kamar *kamarHead, const char *nama, int nomor
             *head = baru;
 
             kamar->tersedia = 0; // Mengubah status kamar menjadi tidak tersedia
+            system("clear");
             printf("Reservasi berhasil untuk %s pada kamar nomor %d\n", nama, nomorKamar);
             return;
         }
@@ -89,18 +97,18 @@ void tambahReservasi(Orang **head, Kamar *kamarHead, const char *nama, int nomor
 void tampilkanAntrianReservasi(Orang *head)
 {
     Orang *temp = head;
-    printf("\n%-30s%-15s%-15s\n", "Nama", "Nomor Kamar", "Status Reservasi");
+    printf("\n%-15s%-20s%-15s\n", "Nama", "Nomor Kamar", "Status Reservasi");
     printf("-----------------------------------------------\n");
 
     while (temp != NULL)
     {
-        printf("%-30s%-15d%-15s\n", temp->nama, temp->nomorKamarReservasi,
+        printf("%-15s%-201d%-15s\n", temp->nama, temp->nomorKamarReservasi,
                (temp->statusReservasi == 0 ? "Belum Disetujui" : "Disetujui"));
         temp = temp->next;
     }
 }
 
-// Fungsi untuk menyetujui reservasi dari queue
+// Fungsi untuk menambah orang ke dalam queue (menunggu persetujuan)
 void enqueue(Queue *q, Orang *orang)
 {
     if (q->rear == NULL)
@@ -112,7 +120,37 @@ void enqueue(Queue *q, Orang *orang)
     q->rear = orang;
 }
 
-void dequeue(Queue *q)
+// Fungsi untuk menambahkan riwayat pemesanan ke dalam linked list history
+void tambahHistory(History **head, const char *nama, int nomorKamar)
+{
+    History *baru = (History *)malloc(sizeof(History));
+    strcpy(baru->nama, nama);
+    baru->nomorKamar = nomorKamar;
+    baru->next = *head;
+    *head = baru;
+}
+
+// Fungsi untuk menampilkan riwayat pemesanan
+void tampilkanHistory(History *head)
+{
+    History *temp = head;
+    printf("\n%-15s%-15s\n", "Nama", "Nomor Kamar");
+    printf("-----------------------------\n");
+
+    while (temp != NULL)
+    {
+        printf("%-15s%-15d\n", temp->nama, temp->nomorKamar);
+        temp = temp->next;
+    }
+
+    if (head == NULL)
+    {
+        printf("Belum ada riwayat pemesanan.\n");
+    }
+}
+
+// Fungsi untuk mengeluarkan orang pertama dari queue dan menyetujuinya
+void dequeue(Queue *q, History **historyHead)
 {
     if (q->front == NULL)
     {
@@ -125,12 +163,17 @@ void dequeue(Queue *q)
     {
         q->rear = NULL;
     }
-    orangDisetujui->statusReservasi = 1; // Mengubah status menjadi disetujui
+
+    orangDisetujui->statusReservasi = 1; // Ubah status menjadi disetujui
     printf("Menyetujui reservasi untuk %s pada kamar nomor %d\n", orangDisetujui->nama, orangDisetujui->nomorKamarReservasi);
-    free(orangDisetujui); // Bebaskan memori
+
+    // Tambahkan ke dalam history
+    tambahHistory(historyHead, orangDisetujui->nama, orangDisetujui->nomorKamarReservasi);
+
+    free(orangDisetujui); // Bebaskan memori orang yang sudah disetujui
 }
 
-// Fungsi untuk menghapus semua reservasi
+// Fungsi untuk menghapus semua reservasi dalam antrian
 void hapusSemuaReservasi(Orang **head)
 {
     Orang *current = *head;
@@ -158,52 +201,60 @@ void hapusSemuaKamar(Kamar **head)
     *head = NULL;
 }
 
-// Fungsi Menu
-void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
+void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyHead)
 {
     int pilihan, nomorKamar, status;
-    float harga;
     char nama[50], jenisKamar[20];
 
     do
     {
+        system("clear");
         printf("\n--- Menu ---\n");
         printf("1. Tambah Kamar\n");
         printf("2. Tampilkan Daftar Kamar\n");
         printf("3. Tambah Reservasi\n");
         printf("4. Tampilkan Antrian Reservasi\n");
-        printf("5. Setujui Reservasi\n");
-        printf("6. Hapus Semua Kamar\n");
-        printf("7. Hapus Semua Reservasi\n");
-        printf("8. Keluar\n");
-        printf("Pilih menu (1-8): ");
+        printf("5. Setujui Reservasi (Antri)\n");
+        printf("6. Tampilkan Riwayat Pemesanan\n");
+        printf("7. Hapus Semua Kamar\n");
+        printf("8. Hapus Semua Reservasi\n");
+        printf("9. Keluar\n");
+        printf("Pilih menu (1-9): ");
+        fflush(stdin);
         scanf("%d", &pilihan);
 
         switch (pilihan)
         {
         case 1:
+            system("clear");
             printf("Masukkan nomor kamar: ");
             scanf("%d", &nomorKamar);
             printf("Masukkan jenis kamar: ");
             scanf("%s", jenisKamar);
             printf("Masukkan status kamar (1 untuk tersedia, 0 untuk tidak tersedia): ");
             scanf("%d", &status);
-            printf("Masukkan harga kamar: ");
-            scanf("%f", &harga);
-            tambahKamar(kamarHead, nomorKamar, jenisKamar, status, harga);
+            tambahKamar(kamarHead, nomorKamar, jenisKamar, status);
             break;
         case 2:
             tampilkanKamar(*kamarHead);
+            getchar();
+            getchar();
             break;
         case 3:
+            system("clear");
             printf("Masukkan nama: ");
             scanf("%s", nama);
+            tampilkanKamar(*kamarHead);
             printf("Masukkan nomor kamar yang ingin dipesan: ");
             scanf("%d", &nomorKamar);
             tambahReservasi(reservasiHead, *kamarHead, nama, nomorKamar);
+            getchar();
+            getchar();
             break;
         case 4:
             tampilkanAntrianReservasi(*reservasiHead);
+            getchar();
+            getchar();
             break;
         case 5:
             if (*reservasiHead != NULL)
@@ -215,34 +266,48 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
                     (*reservasiHead)->prev = NULL;
                 }
                 orang->next = NULL;
-                enqueue(q, orang);
+                enqueue(q, orang); // Masukkan ke dalam queue
             }
-            dequeue(q);
+            dequeue(q, historyHead); // Proses penyetujuan dan tambahkan history
+            getchar();
+            getchar();
             break;
         case 6:
-            hapusSemuaKamar(kamarHead);
-            printf("Semua kamar telah dihapus.\n");
+            tampilkanHistory(*historyHead);
+            getchar();
+            getchar();
             break;
         case 7:
-            hapusSemuaReservasi(reservasiHead);
-            printf("Semua reservasi telah dihapus.\n");
+            hapusSemuaKamar(kamarHead);
+            printf("Semua kamar telah dihapus.\n");
+            getchar();
+            getchar();
             break;
         case 8:
+            hapusSemuaReservasi(reservasiHead);
+            printf("Semua reservasi telah dihapus.\n");
+            getchar();
+            getchar();
+            break;
+        case 9:
             printf("Keluar dari program...\n");
             break;
         default:
             printf("Pilihan tidak valid, coba lagi.\n");
         }
-    } while (pilihan != 8);
+    } while (pilihan != 9);
 }
+
 
 int main()
 {
     Kamar *kamarHead = NULL;
     Orang *reservasiHead = NULL;
     Queue q = {NULL, NULL}; // Queue kosong pada awalnya
+    History *historyHead = NULL; // Linked list history kosong
 
-    menu(&kamarHead, &reservasiHead, &q);
+    menu(&kamarHead, &reservasiHead, &q, &historyHead);
 
     return 0;
 }
+
