@@ -8,6 +8,7 @@ typedef struct Kamar
     int nomorKamar;
     char jenisKamar[20];
     int tersedia; // 1 untuk tersedia, 0 untuk tidak tersedia
+    float harga;  // Harga kamar
     struct Kamar *next;
 } Kamar;
 
@@ -29,12 +30,13 @@ typedef struct Queue
 } Queue;
 
 // Fungsi untuk menambah data kamar ke dalam linked list kamar
-void tambahKamar(Kamar **head, int nomorKamar, const char *jenisKamar, int tersedia)
+void tambahKamar(Kamar **head, int nomorKamar, const char *jenisKamar, int tersedia, float harga)
 {
     Kamar *baru = (Kamar *)malloc(sizeof(Kamar));
     baru->nomorKamar = nomorKamar;
     strcpy(baru->jenisKamar, jenisKamar);
     baru->tersedia = tersedia;
+    baru->harga = harga;
     baru->next = *head;
     *head = baru;
 }
@@ -43,12 +45,13 @@ void tambahKamar(Kamar **head, int nomorKamar, const char *jenisKamar, int terse
 void tampilkanKamar(Kamar *head)
 {
     Kamar *temp = head;
-    printf("\n%-15s%-20s%-15s\n", "Nomor Kamar", "Jenis Kamar", "Status");
-    printf("----------------------------------------------\n");
+    printf("\n%-15s%-20s%-15s%-10s\n", "Nomor Kamar", "Jenis Kamar", "Status", "Harga");
+    printf("---------------------------------------------------------\n");
 
     while (temp != NULL)
     {
-        printf("%-15d%-20s%-15s\n", temp->nomorKamar, temp->jenisKamar, (temp->tersedia ? "Tersedia" : "Tidak Tersedia"));
+        printf("%-15d%-20s%-15sRp. %.2f\n", temp->nomorKamar, temp->jenisKamar,
+               (temp->tersedia ? "Tersedia" : "Tidak Tersedia"), temp->harga);
         temp = temp->next;
     }
 }
@@ -97,7 +100,7 @@ void tampilkanAntrianReservasi(Orang *head)
     }
 }
 
-// Fungsi untuk menambah orang ke dalam queue (menunggu persetujuan)
+// Fungsi untuk menyetujui reservasi dari queue
 void enqueue(Queue *q, Orang *orang)
 {
     if (q->rear == NULL)
@@ -109,7 +112,6 @@ void enqueue(Queue *q, Orang *orang)
     q->rear = orang;
 }
 
-// Fungsi untuk mengeluarkan orang pertama dari queue dan menyetujuinya
 void dequeue(Queue *q)
 {
     if (q->front == NULL)
@@ -125,10 +127,10 @@ void dequeue(Queue *q)
     }
     orangDisetujui->statusReservasi = 1; // Mengubah status menjadi disetujui
     printf("Menyetujui reservasi untuk %s pada kamar nomor %d\n", orangDisetujui->nama, orangDisetujui->nomorKamarReservasi);
-    free(orangDisetujui); // Bebaskan memori orang yang sudah disetujui
+    free(orangDisetujui); // Bebaskan memori
 }
 
-// Fungsi untuk menghapus semua reservasi dalam antrian
+// Fungsi untuk menghapus semua reservasi
 void hapusSemuaReservasi(Orang **head)
 {
     Orang *current = *head;
@@ -160,6 +162,7 @@ void hapusSemuaKamar(Kamar **head)
 void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
 {
     int pilihan, nomorKamar, status;
+    float harga;
     char nama[50], jenisKamar[20];
 
     do
@@ -169,7 +172,7 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
         printf("2. Tampilkan Daftar Kamar\n");
         printf("3. Tambah Reservasi\n");
         printf("4. Tampilkan Antrian Reservasi\n");
-        printf("5. Setujui Reservasi (Antri)\n");
+        printf("5. Setujui Reservasi\n");
         printf("6. Hapus Semua Kamar\n");
         printf("7. Hapus Semua Reservasi\n");
         printf("8. Keluar\n");
@@ -185,7 +188,9 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
             scanf("%s", jenisKamar);
             printf("Masukkan status kamar (1 untuk tersedia, 0 untuk tidak tersedia): ");
             scanf("%d", &status);
-            tambahKamar(kamarHead, nomorKamar, jenisKamar, status);
+            printf("Masukkan harga kamar: ");
+            scanf("%f", &harga);
+            tambahKamar(kamarHead, nomorKamar, jenisKamar, status, harga);
             break;
         case 2:
             tampilkanKamar(*kamarHead);
@@ -201,7 +206,6 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
             tampilkanAntrianReservasi(*reservasiHead);
             break;
         case 5:
-            // Pindahkan orang pertama dari double linked list ke queue
             if (*reservasiHead != NULL)
             {
                 Orang *orang = *reservasiHead;
@@ -211,9 +215,9 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q)
                     (*reservasiHead)->prev = NULL;
                 }
                 orang->next = NULL;
-                enqueue(q, orang); // Masukkan ke dalam queue untuk disetujui
+                enqueue(q, orang);
             }
-            dequeue(q); // Proses penyetujuan orang pertama dalam queue
+            dequeue(q);
             break;
         case 6:
             hapusSemuaKamar(kamarHead);
