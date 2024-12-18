@@ -133,6 +133,12 @@ void tambahHistory(History **head, const char *nama, int nomorKamar)
 // Fungsi untuk menampilkan riwayat pemesanan
 void tampilkanHistory(History *head)
 {
+    if (head == NULL)
+    {
+        printf("Belum ada riwayat pemesanan.\n");
+        return;
+    }
+
     History *temp = head;
     printf("\n%-15s%-15s\n", "Nama", "Nomor Kamar");
     printf("-----------------------------\n");
@@ -141,11 +147,6 @@ void tampilkanHistory(History *head)
     {
         printf("%-15s%-15d\n", temp->nama, temp->nomorKamar);
         temp = temp->next;
-    }
-
-    if (head == NULL)
-    {
-        printf("Belum ada riwayat pemesanan.\n");
     }
 }
 
@@ -201,6 +202,27 @@ void hapusSemuaKamar(Kamar **head)
     *head = NULL;
 }
 
+// Fungsi untuk autentikasi sandi
+int autentikasiSandi()
+{
+    const char sandiBenar[] = "admin123";
+    char sandiInput[20];
+
+    printf("Masukkan sandi untuk mengakses riwayat pemesanan: ");
+    scanf("%s", sandiInput);
+
+    if (strcmp(sandiInput, sandiBenar) == 0)
+    {
+        printf("Sandi benar. Mengakses riwayat pemesanan...\n");
+        return 1;
+    }
+    else
+    {
+        printf("Sandi salah. Akses ditolak.\n");
+        return 0;
+    }
+}
+
 // Fungsi Menu
 void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyHead)
 {
@@ -224,7 +246,6 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyH
         printf("Pilih menu (1-9): ");
         fflush(stdin);
         scanf("%d", &pilihan);
-
 
         switch (pilihan)
         {
@@ -281,7 +302,10 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyH
             break;
         case 6:
             system("cls");
-            tampilkanHistory(*historyHead);
+            if (autentikasiSandi())
+            {
+                tampilkanHistory(*historyHead);
+            }
             getchar();
             getchar();
             break;
