@@ -125,7 +125,7 @@ void dequeue(Queue *q)
     }
     orangDisetujui->statusReservasi = 1; // Mengubah status menjadi disetujui
     printf("Menyetujui reservasi untuk %s pada kamar nomor %d\n", orangDisetujui->nama, orangDisetujui->nomorKamarReservasi);
-    free(orangDisetujui); // Bebaskan memori orang yang sudah disetujui
+    // Jangan bebaskan memori orang yang sudah disetujui
 }
 
 // Fungsi untuk menghapus semua reservasi dalam antrian
