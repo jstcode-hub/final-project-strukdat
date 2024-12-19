@@ -121,6 +121,50 @@ void tampilkanAntrianReservasi(Queue *q)
     }
 }
 
+// Fungsi untuk menyetujui reservasi berdasarkan nama dan nomor kamar
+void setujuiReservasiManual(Queue *q, History **historyHead, const char *nama, int nomorKamar)
+{
+    Orang *current = q->front;
+    Orang *prev = NULL;
+
+    while (current != NULL)
+    {
+        if (strcmp(current->nama, nama) == 0 && current->nomorKamarReservasi == nomorKamar)
+        {
+            printf("Menyetujui reservasi untuk %s pada kamar nomor %d\n", current->nama, current->nomorKamarReservasi);
+
+            // Tambahkan ke dalam history
+            tambahHistory(historyHead, current->nama, current->nomorKamarReservasi);
+
+            // Hapus dari queue
+            if (prev == NULL) // Jika orang yang disetujui adalah orang pertama
+            {
+                q->front = current->next;
+                if (q->front == NULL) // Jika antrian kosong
+                {
+                    q->rear = NULL;
+                }
+            }
+            else
+            {
+                prev->next = current->next;
+                if (current == q->rear) // Jika orang yang disetujui adalah orang terakhir
+                {
+                    q->rear = prev;
+                }
+            }
+
+            free(current);
+            return;
+        }
+
+        prev = current;
+        current = current->next;
+    }
+
+    printf("Reservasi dengan nama %s dan kamar nomor %d tidak ditemukan dalam antrian.\n", nama, nomorKamar);
+}
+
 // Fungsi untuk menambahkan riwayat pemesanan ke dalam linked list history
 void tambahHistory(History **head, const char *nama, int nomorKamar)
 {
@@ -286,16 +330,29 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyH
             getchar();
             break;
         case 5:
-            dequeue(q, historyHead); // Proses penyetujuan dan tambahkan history
+            system("cls");
+            char namaManual[50];
+            int nomorKamarManual;
+
+            printf("Antrian Reservasi:\n");
+            tampilkanAntrianReservasi(q);
+
+            printf("\nMasukkan nama: ");
+            scanf("%s", namaManual);
+            printf("Masukkan nomor kamar: ");
+            scanf("%d", &nomorKamarManual);
+
+            setujuiReservasiManual(q, historyHead, namaManual, nomorKamarManual);
+
             getchar();
             getchar();
             break;
-        case 6:
-            system("cls");
-            if (autentikasiSandi())
-            {
-                tampilkanHistory(*historyHead);
-            }
+                case 6:
+                    system("cls");
+                    if (autentikasiSandi())
+                    {
+                        tampilkanHistory(*historyHead);
+                    }
             getchar();
             getchar();
             break;
