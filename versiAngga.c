@@ -376,7 +376,7 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyH
     } while (pilihan != 9);
 }
 
-int main()
+int main() 
 {
     Kamar *kamarHead = NULL;
     Orang *reservasiHead = NULL;
