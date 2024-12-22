@@ -8,8 +8,8 @@ typedef struct Kamar
 {
     int nomorKamar;
     char jenisKamar[20];
-    int tersedia; // 1 untuk tersedia, 0 untuk tidak tersedia
-    float harga;  // Harga kamar
+    int tersedia;
+    float harga;
     struct Kamar *next;
 } Kamar;
 
@@ -18,7 +18,7 @@ typedef struct Orang
 {
     char nama[50];
     int nomorKamarReservasi;
-    int statusReservasi; // 0 untuk belum disetujui, 1 untuk disetujui
+    int statusReservasi;
     struct Orang *prev;
     struct Orang *next;
 } Orang;
@@ -71,11 +71,11 @@ void tambahReservasi(Orang **head, Kamar *kamarHead, Queue *q, const char *nama,
     while (kamar != NULL)
     {
         if (kamar->nomorKamar == nomorKamar && kamar->tersedia == 1)
-        { // Jika kamar tersedia
+        {
             Orang *baru = (Orang *)malloc(sizeof(Orang));
             strcpy(baru->nama, nama);
             baru->nomorKamarReservasi = nomorKamar;
-            baru->statusReservasi = 0; // Status awal = belum disetujui
+            baru->statusReservasi = 0;
             baru->prev = NULL;
             baru->next = *head;
             if (*head != NULL)
@@ -84,9 +84,8 @@ void tambahReservasi(Orang **head, Kamar *kamarHead, Queue *q, const char *nama,
             }
             *head = baru;
 
-            kamar->tersedia = 0; // Mengubah status kamar menjadi tidak tersedia
+            kamar->tersedia = 0;
 
-            // Tambahkan ke dalam queue
             baru->next = NULL;
             if (q->rear == NULL)
             {
@@ -133,14 +132,13 @@ void setujuiReservasiManual(Queue *q, History **historyHead, const char *nama, i
         {
             printf("Menyetujui reservasi untuk %s pada kamar nomor %d\n", current->nama, current->nomorKamarReservasi);
 
-            // Tambahkan ke dalam history
             tambahHistory(historyHead, current->nama, current->nomorKamarReservasi);
 
             // Hapus dari queue
-            if (prev == NULL) // Jika orang yang disetujui adalah orang pertama
+            if (prev == NULL)
             {
                 q->front = current->next;
-                if (q->front == NULL) // Jika antrian kosong
+                if (q->front == NULL)
                 {
                     q->rear = NULL;
                 }
@@ -148,7 +146,7 @@ void setujuiReservasiManual(Queue *q, History **historyHead, const char *nama, i
             else
             {
                 prev->next = current->next;
-                if (current == q->rear) // Jika orang yang disetujui adalah orang terakhir
+                if (current == q->rear)
                 {
                     q->rear = prev;
                 }
@@ -213,10 +211,9 @@ void dequeue(Queue *q, History **historyHead)
     orangDisetujui->statusReservasi = 1; // Ubah status menjadi disetujui
     printf("Menyetujui reservasi untuk %s pada kamar nomor %d\n", orangDisetujui->nama, orangDisetujui->nomorKamarReservasi);
 
-    // Tambahkan ke dalam history
     tambahHistory(historyHead, orangDisetujui->nama, orangDisetujui->nomorKamarReservasi);
 
-    free(orangDisetujui); // Bebaskan memori orang yang sudah disetujui
+    free(orangDisetujui);
 }
 
 // Fungsi untuk menghapus semua reservasi
@@ -347,12 +344,12 @@ void menu(Kamar **kamarHead, Orang **reservasiHead, Queue *q, History **historyH
             getchar();
             getchar();
             break;
-                case 6:
-                    system("cls");
-                    if (autentikasiSandi())
-                    {
-                        tampilkanHistory(*historyHead);
-                    }
+        case 6:
+            system("cls");
+            if (autentikasiSandi())
+            {
+                tampilkanHistory(*historyHead);
+            }
             getchar();
             getchar();
             break;
@@ -383,8 +380,8 @@ int main()
 {
     Kamar *kamarHead = NULL;
     Orang *reservasiHead = NULL;
-    Queue q = {NULL, NULL};      // Queue kosong pada awalnya
-    History *historyHead = NULL; // Linked list history kosong
+    Queue q = {NULL, NULL};
+    History *historyHead = NULL;
 
     menu(&kamarHead, &reservasiHead, &q, &historyHead);
 
